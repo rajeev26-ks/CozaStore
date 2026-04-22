@@ -1,0 +1,21 @@
+
+import './App.css';
+import { Routes, Route } from "react-router-dom";
+import Dashboard from "./pages/Dashboard";
+import Products from "./pages/Products";
+import Orders from "./pages/Orders";
+import AddProduct from './pages/AddProduct';
+
+export default function AppRoutes() {
+  return (
+    
+      <Routes>
+        <Route path="/" element={<Dashboard />} />
+        <Route path="/products" element={<Products/>} />
+        <Route path="/add-product" element={<AddProduct />} />
+        <Route path="/orders" element={<Orders />} />
+      
+      </Routes>
+   
+  );
+}
