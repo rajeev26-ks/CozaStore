@@ -1,11 +1,13 @@
-// Login.jsx - Complete working version
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { toast } from "react-toastify";
+import Swal from "sweetalert2";
 import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../contexts/AuthContext"; // ✅ added
 
 const Login = () => {
   const navigate = useNavigate();
+  const { login } = useAuth(); // ✅ use context
+
   const [form, setForm] = useState({ email: "", password: "" });
   const [rememberMe, setRememberMe] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -25,11 +27,7 @@ const Login = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    
-    console.log("=== LOGIN ATTEMPT ===");
-    console.log("Email:", form.email);
-    console.log("Password:", "***");
-    
+
     try {
       const response = await axios.post(
         "http://localhost:8888/api/user/login",
@@ -38,58 +36,62 @@ const Login = () => {
           password: form.password
         },
         {
-          headers: {
-            'Content-Type': 'application/json',
-          },
+          headers: { "Content-Type": "application/json" },
           timeout: 100000
         }
       );
-      
-      console.log("Response status:", response.status);
-      console.log("Response data:", response.data);
-      
+
       if (response.data.success === true) {
-        // Handle remember me
+
+        // remember me
         if (rememberMe) {
           localStorage.setItem("rememberedEmail", form.email);
         } else {
           localStorage.removeItem("rememberedEmail");
         }
-        
-        // Store token if exists
-        if (response.data.token) {
-          localStorage.setItem("authToken", response.data.token);
-        }
-        
-        // Store user data
-        if (response.data.user) {
-          localStorage.setItem("user", JSON.stringify(response.data.user));
-        }
-        
-        toast.success(response.data.message || "Login successful ✅");
-        
-        // Redirect to dashboard
-        setTimeout(() => {
-          navigate("/home");
-        }, 500);
+
+        // ✅ use AuthContext (single source of truth)
+        login(response.data.user, response.data.token);
+
+        await Swal.fire({
+          title: "Login Successful 🎉",
+          text: response.data.message || "Welcome back!",
+          icon: "success",
+          confirmButtonColor: "#717fe0",
+        });
+
+        navigate("/home");
+
       } else {
-        toast.error(response.data.message || "Login failed");
+        Swal.fire({
+          title: "Login Failed",
+          text: response.data.message || "Login failed",
+          icon: "error",
+          confirmButtonColor: "#d33"
+        });
       }
-      
+
     } catch (error) {
-      console.error("Login error details:", error);
-      
+
+      let errorMessage = "Login failed. Please try again.";
+
       if (error.code === "ERR_NETWORK") {
-        toast.error("Cannot connect to server. Make sure backend is running on port 8888");
+        errorMessage = "Cannot connect to server. Backend not running.";
       } else if (error.response?.status === 401) {
-        toast.error("Invalid email or password. Please try again.");
+        errorMessage = "Invalid email or password.";
       } else if (error.response?.status === 400) {
-        toast.error(error.response.data?.message || "Please provide email and password");
+        errorMessage = error.response.data?.message || "Missing fields";
       } else if (error.response?.status === 500) {
-        toast.error("Server error. Please try again later.");
-      } else {
-        toast.error(error.response?.data?.message || "Login failed. Please try again.");
+        errorMessage = "Server error. Try again later.";
       }
+
+      Swal.fire({
+        title: "Error",
+        text: errorMessage,
+        icon: "error",
+        confirmButtonColor: "#d33"
+      });
+
     } finally {
       setLoading(false);
     }
@@ -127,21 +129,22 @@ const Login = () => {
                 type="checkbox"
                 checked={rememberMe}
                 onChange={(e) => setRememberMe(e.target.checked)}
-              />{" "}
+              />
               Remember me
             </label>
+
             <Link to="/forgot-password" style={styles.link}>
               Forgot Password?
             </Link>
           </div>
 
-          <button 
-            type="submit" 
+          <button
+            type="submit"
             style={{
               ...styles.button,
               opacity: loading ? 0.6 : 1,
               cursor: loading ? "not-allowed" : "pointer"
-            }} 
+            }}
             disabled={loading}
           >
             {loading ? "Logging in..." : "Login"}
@@ -149,7 +152,7 @@ const Login = () => {
 
           <p style={styles.register}>
             Don't have an account?{" "}
-          <Link to="/signup" style={styles.link}>Create one</Link>
+            <Link to="/signup" style={styles.link}>Create one</Link>
           </p>
         </form>
       </div>
@@ -164,7 +167,6 @@ const styles = {
     justifyContent: "center",
     alignItems: "center",
     background: "#f1f1f1",
-    margin: 0,
     padding: "20px"
   },
   card: {
@@ -177,18 +179,14 @@ const styles = {
   },
   title: {
     marginBottom: "20px",
-    color: "#333",
-    textAlign: "center",
-    fontSize: "24px"
+    textAlign: "center"
   },
   input: {
     width: "100%",
     padding: "12px",
     marginBottom: "15px",
     border: "1px solid #ddd",
-    borderRadius: "5px",
-    fontSize: "14px",
-    boxSizing: "border-box"
+    borderRadius: "5px"
   },
   button: {
     width: "100%",
@@ -196,34 +194,25 @@ const styles = {
     background: "#717fe0",
     color: "#fff",
     border: "none",
-    borderRadius: "5px",
-    fontSize: "15px",
-    cursor: "pointer",
-    transition: "all 0.3s ease"
+    borderRadius: "5px"
   },
   options: {
     display: "flex",
     justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: "20px",
-    fontSize: "14px"
+    marginBottom: "20px"
   },
   checkboxLabel: {
     display: "flex",
     alignItems: "center",
-    gap: "5px",
-    cursor: "pointer"
+    gap: "5px"
   },
   link: {
     color: "#717fe0",
-    textDecoration: "none",
-    cursor: "pointer"
+    textDecoration: "none"
   },
   register: {
     marginTop: "20px",
-    fontSize: "14px",
-    textAlign: "center",
-    color: "#666"
+    textAlign: "center"
   }
 };
 

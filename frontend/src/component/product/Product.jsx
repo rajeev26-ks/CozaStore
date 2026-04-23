@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useCart } from "../contexts/CartContext";
+import Swal from "sweetalert2"; // Import SweetAlert2
 
 // Product data with numeric prices and unique IDs
 const productsData = [
@@ -38,6 +39,20 @@ function Product() {
   };
 
   const loadMore = () => setVisibleCount(prev => prev + 8);
+
+  // Handler for adding product to cart with SweetAlert
+  const handleAddToCart = (product) => {
+    addToCart(product);
+    Swal.fire({
+      title: "Added to Cart!",
+      text: `${product.name} has been added to your cart.`,
+      icon: "success",
+      timer: 1500,
+      showConfirmButton: false,
+      position: "top-end",
+      toast: true,
+    });
+  };
 
   return (
     <div className="bg0 p-b-140">
@@ -150,7 +165,7 @@ function Product() {
                 <div className="block2-pic hov-img0">
                   <img src={`images/${product.image}`} alt={product.name} />
                   <button
-                    onClick={() => addToCart(product)}
+                    onClick={() => handleAddToCart(product)} // Updated handler
                     className="block2-btn flex-c-m stext-103 cl2 size-102 bg0 bor2 hov-btn1 p-lr-15 trans-04"
                   >
                     Add to Cart
